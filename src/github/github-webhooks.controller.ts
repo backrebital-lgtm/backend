@@ -20,11 +20,11 @@ export class GithubWebhooksController {
     @Headers('x-github-delivery') deliveryId: string,
     @Headers('x-hub-signature-256') signature: string,
   ) {
-    const rawBody = req.rawBody ?? Buffer.from(JSON.stringify(req.body ?? {}));
-    const signatureValid = this.webhooksService.verifySignature(
-      rawBody,
-      signature,
-    );
+    // Never reconstruct the payload for HMAC verification: JSON parsing and
+    // serialization can change bytes, so a fallback body cannot be trusted.
+    const signatureValid = req.rawBody
+      ? this.webhooksService.verifySignature(req.rawBody, signature)
+      : false;
 
     const event = await this.webhooksService.handleEvent(
       eventType,
